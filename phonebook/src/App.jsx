@@ -1,35 +1,101 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+/* eslint-disable react/prop-types */
+import { useState } from 'react';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+const Filter = ({filter, changeFilter}) => {
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+  <div>
+    filter shown with <input value={filter} onChange={changeFilter} />
+  </div>
   )
 }
 
-export default App
+const PersonForm = ({addNewName, newName, newNumber, handleNameChange, handleNumberChange}) => {
+  return (
+    <div>
+      <form onSubmit={addNewName}>
+        <div>
+          <div>name: <input value={newName} onChange={handleNameChange} /></div>
+          <div>number: <input value={newNumber} onChange={handleNumberChange} /></div>
+        </div>
+        <div>
+          <button type="submit">add</button>
+        </div>
+      </form>
+    </div>
+  )
+}
+const Persons = ({persons, filter}) => {
+  return (
+    <div>
+      {persons
+        .filter(person => 
+          person.name.toLowerCase().includes(filter.toLowerCase()) ||
+          person.phone.includes(filter)
+        )
+        .map(person => (
+          <p key={person.id}>Name: {person.name}; Number: {person.phone}</p>
+        ))
+      }
+    </div>
+  )
+}
+
+const App = () => {
+  const [persons, setPersons] = useState([
+    { name: 'Arto Hellas', id: 0, phone: '040-1234567'}
+  ]);
+  const [newName, setNewName] = useState('');
+  const [newNumber, setNewNumber] = useState('');
+  const [filter, setFilter] = useState('');
+
+  function addNewName(event) {
+    let copied = false;
+    event.preventDefault();
+    persons.forEach((person) => {
+      if (newName === person.name) {
+        copied = true;
+        alert(`${newName} is already added to phonebook`);
+      }
+    });
+    if (!copied) {
+      const personObject = {
+        name: newName,
+        id: String(persons.length + 1),
+        phone: String(newNumber)
+      };
+      setPersons(persons.concat(personObject));
+      setNewName('');
+      setNewNumber(''); // Clear the number input as well
+    }
+  }
+
+  function handleNameChange(event) {
+    setNewName(event.target.value);
+  }
+
+  function handleNumberChange(event) {
+    setNewNumber(event.target.value);
+  }
+
+  function changeFilter(event) {
+    setFilter(event.target.value);
+  }
+
+  return (
+    <div>
+      <h2>Phonebook</h2>
+      <Filter filter={filter} changeFilter = {changeFilter} />
+      <h3>add a new</h3>
+      <PersonForm 
+      addNewName={addNewName} 
+      newName={newName} 
+      newNumber={newNumber} 
+      handleNameChange={handleNameChange} 
+      handleNumberChange={handleNumberChange}/>
+      <h3>Numbers</h3>
+      <Persons persons={persons} filter={filter} />
+    </div>
+  );
+}
+
+export default App;

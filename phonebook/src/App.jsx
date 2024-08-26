@@ -1,15 +1,14 @@
-/* eslint-disable react/prop-types */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const Filter = ({filter, changeFilter}) => {
+const Filter = ({ filter, changeFilter }) => {
   return (
-  <div>
-    filter shown with <input value={filter} onChange={changeFilter} />
-  </div>
-  )
-}
+    <div>
+      filter shown with <input value={filter} onChange={changeFilter} />
+    </div>
+  );
+};
 
-const PersonForm = ({addNewName, newName, newNumber, handleNameChange, handleNumberChange}) => {
+const PersonForm = ({ addNewName, newName, newNumber, handleNameChange, handleNumberChange }) => {
   return (
     <div>
       <form onSubmit={addNewName}>
@@ -22,50 +21,62 @@ const PersonForm = ({addNewName, newName, newNumber, handleNameChange, handleNum
         </div>
       </form>
     </div>
-  )
-}
-const Persons = ({persons, filter}) => {
+  );
+};
+
+const Persons = ({ persons, filter }) => {
   return (
     <div>
       {persons
-        .filter(person => 
+        // eslint-disable-next-line react/prop-types
+        .filter(person =>
           person.name.toLowerCase().includes(filter.toLowerCase()) ||
           person.phone.includes(filter)
         )
         .map(person => (
-          <p key={person.id}>Name: {person.name}; Number: {person.phone}</p>
-        ))
-      }
+          <p key={person.id}>Name: {person.name}; Number: {person.number}</p>
+        ))}
     </div>
-  )
-}
+  );
+};
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', id: 0, phone: '040-1234567'}
-  ]);
+  const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [filter, setFilter] = useState('');
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch('http://localhost:3001/persons');
+      const data = await response.json();
+      setPersons(data);
+    };
+
+    fetchData();
+  }, []);
+
   function addNewName(event) {
-    let copied = false;
     event.preventDefault();
+    let copied = false;
+
     persons.forEach((person) => {
       if (newName === person.name) {
         copied = true;
         alert(`${newName} is already added to phonebook`);
       }
     });
+
     if (!copied) {
       const personObject = {
         name: newName,
         id: String(persons.length + 1),
-        phone: String(newNumber)
+        number: String(newNumber)
       };
+
       setPersons(persons.concat(personObject));
       setNewName('');
-      setNewNumber(''); // Clear the number input as well
+      setNewNumber('');
     }
   }
 
@@ -84,18 +95,19 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter filter={filter} changeFilter = {changeFilter} />
+      <Filter filter={filter} changeFilter={changeFilter} />
       <h3>add a new</h3>
-      <PersonForm 
-      addNewName={addNewName} 
-      newName={newName} 
-      newNumber={newNumber} 
-      handleNameChange={handleNameChange} 
-      handleNumberChange={handleNumberChange}/>
+      <PersonForm
+        addNewName={addNewName}
+        newName={newName}
+        newNumber={newNumber}
+        handleNameChange={handleNameChange}
+        handleNumberChange={handleNumberChange}
+      />
       <h3>Numbers</h3>
       <Persons persons={persons} filter={filter} />
     </div>
   );
-}
+};
 
 export default App;

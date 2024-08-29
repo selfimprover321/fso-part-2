@@ -33,7 +33,7 @@ const addPerson = async (personObject) => {
     throw error;
   }
 };
-
+ 
 const deleteName = async (id) => {
   try {
     const response = await fetch(`${peopleUrl}/${id}`, {
@@ -47,9 +47,30 @@ const deleteName = async (id) => {
     throw error;
   }
 };
+const editPhoneNumber = async (id, newObject) => {
+    try {
+      const response = await fetch(`${peopleUrl}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newObject),
+      });
+      if (!response.ok) {
+        throw new Error('Network error: ' + response.statusText);
+      }
+      const updatedPerson = await response.json();
+      return updatedPerson;
+    } catch (error) {
+      console.error('Edit person failed:', error);
+      throw error;
+    }
+  };
+  
 
 export default {
   fetchData,
   addPerson,
   deleteName,
+  editPhoneNumber
 };

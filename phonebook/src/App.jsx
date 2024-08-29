@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import services from './services/people';
 import PropTypes from 'prop-types';
@@ -85,25 +84,47 @@ const App = () => {
   const addNewName = (event) => {
     event.preventDefault();
     const existingPerson = persons.find(person => person.name === newName);
-
-    if (existingPerson) {
+  
+    if (existingPerson && existingPerson.number !== newNumber) {
+      services.editPhoneNumber(existingPerson.id, {
+        name: existingPerson.name,
+        number: newNumber,
+      })
+      .then(updatedPerson => {
+        setPersons(persons.map(person => 
+          person.id !== existingPerson.id ? person : updatedPerson
+        ));
+        setNewName('');
+        setNewNumber('');
+      })
+      .catch(error => {
+        console.error('Updating phone number failed:', error);
+        setMessage(`Failed to update ${existingPerson.name}'s number`);
+        setTimeout(() => setMessage(null), 5000);
+      });
+    } else if (existingPerson && existingPerson.number === newNumber) {
       setMessage(`${newName} is already added to phonebook`);
       setTimeout(() => setMessage(null), 5000);
     } else {
       const personObject = {
         name: newName,
-        id: String(persons.length + 1),
         number: newNumber,
       };
-
-      services.addPerson(personObject).then(data => {
-        setPersons(persons.concat(data));
-        setNewName('');
-        setNewNumber('');
-      });
+  
+      services.addPerson(personObject)
+        .then(data => {
+          setPersons(persons.concat(data));
+          setNewName('');
+          setNewNumber('');
+        })
+        .catch(error => {
+          console.error('Adding new person failed:', error);
+          setMessage('Failed to add new person');
+          setTimeout(() => setMessage(null), 5000);
+        });
     }
   };
-
+  
   const handleNameChange = (event) => setNewName(event.target.value);
   const handleNumberChange = (event) => setNewNumber(event.target.value);
   const changeFilter = (event) => setFilter(event.target.value);
@@ -126,5 +147,4 @@ const App = () => {
     </div>
   );
 };
-
 export default App;

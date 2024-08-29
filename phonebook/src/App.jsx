@@ -1,44 +1,74 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
+import services from './services/people';
+import PropTypes from 'prop-types';
 
-const Filter = ({ filter, changeFilter }) => {
-  return (
-    <div>
-      filter shown with <input value={filter} onChange={changeFilter} />
-    </div>
-  );
+const Filter = ({ filter, changeFilter }) => (
+  <div>
+    filter shown with <input value={filter} onChange={changeFilter} />
+  </div>
+);
+
+Filter.propTypes = {
+  filter: PropTypes.string.isRequired,
+  changeFilter: PropTypes.func.isRequired,
 };
 
-const PersonForm = ({ addNewName, newName, newNumber, handleNameChange, handleNumberChange }) => {
-  return (
-    <div>
-      <form onSubmit={addNewName}>
-        <div>
-          <div>name: <input value={newName} onChange={handleNameChange} /></div>
-          <div>number: <input value={newNumber} onChange={handleNumberChange} /></div>
-        </div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
-    </div>
-  );
+const PersonForm = ({ addNewName, newName, newNumber, handleNameChange, handleNumberChange }) => (
+  <div>
+    <form onSubmit={addNewName}>
+      <div>
+        <div>name: <input value={newName} onChange={handleNameChange} /></div>
+        <div>number: <input value={newNumber} onChange={handleNumberChange} /></div>
+      </div>
+      <div>
+        <button type="submit">add</button>
+      </div>
+    </form>
+  </div>
+);
+
+PersonForm.propTypes = {
+  addNewName: PropTypes.func.isRequired,
+  newName: PropTypes.string.isRequired,
+  newNumber: PropTypes.string.isRequired,
+  handleNameChange: PropTypes.func.isRequired,
+  handleNumberChange: PropTypes.func.isRequired,
 };
 
-const Persons = ({ persons, filter }) => {
-  return (
-    <div>
-      {persons
-        // eslint-disable-next-line react/prop-types
-        .filter(person =>
-          person.name.toLowerCase().includes(filter.toLowerCase()) ||
-          person.phone.includes(filter)
-        )
-        .map(person => (
-          <p key={person.id}>Name: {person.name}; Number: {person.number}</p>
-        ))}
-    </div>
-  );
+const deletingNames = async (id, persons, setPersons) => {
+  try {
+    await services.deleteName(id);
+    setPersons(persons.filter(person => person.id !== id));
+  } catch (error) {
+    console.error('Delete person failed:', error);
+  }
+};
+
+const Persons = ({ persons, filter, setPersons }) => (
+  <div>
+    {persons
+      .filter(person =>
+        person.name.toLowerCase().includes(filter.toLowerCase()) ||
+        person.number.includes(filter)
+      )
+      .map(person => (
+        <div key={person.id}>
+          <p>Name: {person.name}; Number: {person.number}</p>
+          <button onClick={() => deletingNames(person.id, persons, setPersons)}>delete</button>
+        </div>
+      ))}
+  </div>
+);
+
+Persons.propTypes = {
+  persons: PropTypes.arrayOf(PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    number: PropTypes.string.isRequired,
+    id: PropTypes.string.isRequired,
+  })).isRequired,
+  filter: PropTypes.string.isRequired,
+  setPersons: PropTypes.func.isRequired,
 };
 
 const App = () => {
@@ -46,56 +76,42 @@ const App = () => {
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [filter, setFilter] = useState('');
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch('http://localhost:3001/persons');
-      const data = await response.json();
-      setPersons(data);
-    };
-
-    fetchData();
+    services.fetchData().then(data => setPersons(data));
   }, []);
 
-  function addNewName(event) {
+  const addNewName = (event) => {
     event.preventDefault();
-    let copied = false;
+    const existingPerson = persons.find(person => person.name === newName);
 
-    persons.forEach((person) => {
-      if (newName === person.name) {
-        copied = true;
-        alert(`${newName} is already added to phonebook`);
-      }
-    });
-
-    if (!copied) {
+    if (existingPerson) {
+      setMessage(`${newName} is already added to phonebook`);
+      setTimeout(() => setMessage(null), 5000);
+    } else {
       const personObject = {
         name: newName,
         id: String(persons.length + 1),
-        number: String(newNumber)
+        number: newNumber,
       };
 
-      setPersons(persons.concat(personObject));
-      setNewName('');
-      setNewNumber('');
+      services.addPerson(personObject).then(data => {
+        setPersons(persons.concat(data));
+        setNewName('');
+        setNewNumber('');
+      });
     }
-  }
+  };
 
-  function handleNameChange(event) {
-    setNewName(event.target.value);
-  }
-
-  function handleNumberChange(event) {
-    setNewNumber(event.target.value);
-  }
-
-  function changeFilter(event) {
-    setFilter(event.target.value);
-  }
+  const handleNameChange = (event) => setNewName(event.target.value);
+  const handleNumberChange = (event) => setNewNumber(event.target.value);
+  const changeFilter = (event) => setFilter(event.target.value);
 
   return (
     <div>
       <h2>Phonebook</h2>
+      {message && <div>{message}</div>}
       <Filter filter={filter} changeFilter={changeFilter} />
       <h3>add a new</h3>
       <PersonForm
@@ -106,7 +122,7 @@ const App = () => {
         handleNumberChange={handleNumberChange}
       />
       <h3>Numbers</h3>
-      <Persons persons={persons} filter={filter} />
+      <Persons persons={persons} filter={filter} setPersons={setPersons} />
     </div>
   );
 };

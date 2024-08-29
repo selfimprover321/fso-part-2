@@ -1,0 +1,21 @@
+p{
+    display: block;
+    border-radius: 5px;
+    margin: 5px;
+    padding: 10px;
+    font-size: 15px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+.error-message{
+    background-color: red;
+}
+.info-message{
+    background-color: blue;
+}
+.success-message{
+    background-color: green;
+}
+.remove-message{
+    background-color: black;
+    color: white;
+}
